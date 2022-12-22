@@ -1,22 +1,25 @@
 from __future__ import print_function
 
 import os.path
+import io
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+SCOPES = ['https://www.googleapis.com/auth/documents']  
 
 
 def main():
     """Shows basic usage of the Drive v3 API.
-    Prints the names and ids of the first 10 files the user has access to.
+    Prints the total number of words a user has written in their Google Docs.
     """
     creds = None
+    word_count = 0;
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -46,12 +49,32 @@ def main():
             print('No files found.')
             return
         print('Files:')
+
+        # Iterate through the list of items, downloading the content of each as a stream
         for item in items:
-            print(u'{0} ({1})'.format(item['name'], item['id']))
+            file_id = item['id']
+            request = service.files().export(fileId=file_id, mimeType='text/plain')
+            file = io.BytesIO()
+            downloader = MediaIoBaseDownload(file, request)
+
+            done = False
+            while done is False:
+                status, done = downloader.next_chunk()
+                print(f'Download {int(status.progress() * 100)}.')
+            file.seek(0)
+            content = file.read().decode()
+
+            # Use Python's `len()` function to count the number of words in the text string
+            words = content.split()
+            num_words = len(words)
+
+            # Add the number of words in this file to the running total
+            word_count += num_words
     except HttpError as error:
         # TODO(developer) - Handle errors from drive API.
         print(f'An error occurred: {error}')
-
+    
+    print(f"Total number of words: {word_count}")
 
 if __name__ == '__main__':
     main()
