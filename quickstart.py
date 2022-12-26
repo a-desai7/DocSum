@@ -1,25 +1,21 @@
 from __future__ import print_function
 
 import os.path
-import io
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/documents']  
-
+SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive']
 
 def main():
-    """Shows basic usage of the Drive v3 API.
-    Prints the total number of words a user has written in their Google Docs.
+    """Shows basic usage of the Docs API.
+    Prints the title of a sample document.
     """
     creds = None
-    word_count = 0;
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -40,41 +36,40 @@ def main():
     try:
         service = build('drive', 'v3', credentials=creds)
 
-        # Call the Drive v3 API
-        results = service.files().list(
-            pageSize=10, fields="nextPageToken, files(id, name)").execute()
-        items = results.get('files', [])
+        # Retrieve a list of documents
+        query = "mimeType='application/vnd.google-apps.document'"
+        results = service.files().list(q=query, pageSize=10, fields="nextPageToken, files(id, name)").execute()
+        items = results.get("files", [])
 
-        if not items:
-            print('No files found.')
-            return
-        print('Files:')
+        docs_service = build('docs', 'v1', credentials=creds)
+        word_count = 0;
 
-        # Iterate through the list of items, downloading the content of each as a stream
+        # Iterate through the list of documents
         for item in items:
-            file_id = item['id']
-            request = service.files().export(fileId=file_id, mimeType='text/plain')
-            file = io.BytesIO()
-            downloader = MediaIoBaseDownload(file, request)
+            # Use the `documents().get()` method to retrieve the content of the document as a text string
+            document_id = item['id']
+            document = docs_service.documents().get(documentId=document_id).execute()
+            content = document.get('body').get('content')
 
-            done = False
-            while done is False:
-                status, done = downloader.next_chunk()
-                print(f'Download {int(status.progress() * 100)}.')
-            file.seek(0)
-            content = file.read().decode()
+            # Iterate through the list of text runs in the document
+            for element in content:
+                # Get the text of the text run
+                text_run = element.get('textRun')
+                if text_run:
+                    # Get the text
+                    text = text_run.get('content')
 
-            # Use Python's `len()` function to count the number of words in the text string
-            words = content.split()
-            num_words = len(words)
+                    # Count the number of words in the text run
+                    words = text.split()
+                    num_words = len(words)
 
-            # Add the number of words in this file to the running total
-            word_count += num_words
-    except HttpError as error:
-        # TODO(developer) - Handle errors from drive API.
-        print(f'An error occurred: {error}')
-    
-    print(f"Total number of words: {word_count}")
+                    # Add the number of words in this text run to the running total
+                    word_count += num_words
+
+        print(f"Total number of words: {word_count}")
+    except HttpError as err:
+        print(err)
+
 
 if __name__ == '__main__':
     main()
