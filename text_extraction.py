@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Adapted from Google Workspace: https://developers.google.com/docs/api/samples/extract-text#python
+# Accessed December 25, 2022
+
 """
 Recursively extracts the text from each Google Doc in a user's Google Drive folder.
 Prints the total number of documents and words.
