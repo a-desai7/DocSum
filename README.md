@@ -1,3 +1,3 @@
-# Google-Drive-Word-Counter
+# DocSum
 
-# After a user grants access to their Google Drive account, this script iterates through all of their documents and returns the total sum of documents and words they've written
+# After a user grants access to their Google Drive account, this script iterates through of their all documents and returns a short summary, including word total, document total, and average word count.
