@@ -1,4 +1,4 @@
-# Copyright 2019 Google LLC
+# Copyright 2022 Aayush Desai
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -74,28 +74,30 @@ def read_structural_elements(elements):
             elements: a list of Structural Elements.
     """
     text = ''
-    for value in elements:
-        if 'paragraph' in value:
-            elements = value.get('paragraph').get('elements')
-            for elem in elements:
-                text += read_paragraph_element(elem)
-        elif 'table' in value:
-            # The text in table cells are in nested Structural Elements and tables may be
-            # nested.
-            table = value.get('table')
-            for row in table.get('tableRows'):
-                cells = row.get('tableCells')
-                for cell in cells:
-                    text += read_structural_elements(cell.get('content'))
-        elif 'tableOfContents' in value:
-            # The text in the TOC is also in a Structural Element.
-            toc = value.get('tableOfContents')
-            text += read_structural_elements(toc.get('content'))
-    return text
+    try:
+        for value in elements:
+            if 'paragraph' in value:
+                elements = value.get('paragraph').get('elements')
+                for elem in elements:
+                    text += read_paragraph_element(elem)
+            elif 'table' in value:
+                # The text in table cells are in nested Structural Elements and tables may be
+                # nested.
+                table = value.get('table')
+                for row in table.get('tableRows'):
+                    cells = row.get('tableCells')
+                    for cell in cells:
+                        text += read_structural_elements(cell.get('content'))
+            elif 'tableOfContents' in value:
+                # The text in the TOC is also in a Structural Element.
+                toc = value.get('tableOfContents')
+                text += read_structural_elements(toc.get('content'))
+        return text
+    except:
+        return text
 
 
 def main():
-    start = time.time()
     """Uses the Docs API to print out the text of a document."""
     credentials = get_credentials()
     http = credentials.authorize(Http())
@@ -106,9 +108,10 @@ def main():
 
     """ Retrieves a list of documents in the user's Drive folder"""
     query = "mimeType='application/vnd.google-apps.document'"
-    results = drive_service.files().list(q=query, fields="nextPageToken, files(id, name)").execute()
+    results = drive_service.files().list(q=query, pageSize=1000, fields="nextPageToken, files(id, name)").execute()
     items = results.get("files", [])
 
+    start = time.time()
     """Iterates through each document and adds to the running sum"""
     word_total = 0;
     doc_total = 0;
@@ -122,8 +125,9 @@ def main():
         word_total += num_words
         doc_total += 1
         
-    print(f"Number of documents: {doc_total}")
     print(f"Word total: {word_total}")
+    print(f"Number of documents: {doc_total}")
+    print(f"Average words per document: {(int) (word_total / doc_total)}")
     end = time.time()
     elapsed_time = end - start
     print('Execution time:', elapsed_time, 'seconds')
