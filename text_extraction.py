@@ -17,7 +17,7 @@
 
 """
 Recursively extracts the text from each Google Doc in a user's Google Drive folder.
-Prints the total number of documents and words.
+Prints the total number of documents and words, as well as a five-number summary.
 """
 import time
 import numpy
@@ -114,7 +114,7 @@ def main():
     items = results.get("files", [])
 
     start = time.time()
-    """Iterates through each document and adds to the running sum"""
+    """Iterates through each document, computes global document/word total and five-number summary, then prints to console"""
     word_total = 0
     doc_total = 0
     lengthiest_doc = (0, "")
