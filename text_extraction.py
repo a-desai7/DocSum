@@ -1,4 +1,4 @@
-# Copyright 2022 Aayush Desai
+# Copyright 2023 Aayush Desai
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ def read_structural_elements(elements):
 
 
 def main():
-    """Uses the Docs API to print out the text of a document."""
+    """Uses the Docs API to authenticate user information."""
     credentials = get_credentials()
     http = credentials.authorize(Http())
     docs_service = discovery.build(
@@ -113,23 +113,29 @@ def main():
 
     start = time.time()
     """Iterates through each document and adds to the running sum"""
-    word_total = 0;
-    doc_total = 0;
+    word_total = 0
+    doc_total = 0
+    lengthiest_doc = ("", 0)
     for item in items:
         document_id = item['id']
         doc = docs_service.documents().get(documentId=document_id).execute()
         doc_content = doc.get('body').get('content')
+        doc_title = doc.get('title')
 
         words = read_structural_elements(doc_content)
         num_words = len(words.split())
+        if (num_words > lengthiest_doc[1]):
+            lengthiest_doc = (doc_title, num_words)
         word_total += num_words
         doc_total += 1
+
         
     print(f"Word total: {word_total}")
     print(f"Number of documents: {doc_total}")
     print(f"Average words per document: {(int) (word_total / doc_total)}")
+    print(f"Lengthiest document: {lengthiest_doc}")
     end = time.time()
-    elapsed_time = end - start
+    elapsed_time = (int) (end - start)
     print('Execution time:', elapsed_time, 'seconds')
 
 if __name__ == '__main__':
