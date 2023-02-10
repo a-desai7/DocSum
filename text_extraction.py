@@ -20,13 +20,13 @@ Recursively extracts the text from each Google Doc in a user's Google Drive fold
 Prints the total number of documents and words.
 """
 import time
+import numpy
 import googleapiclient.discovery as discovery
 from httplib2 import Http
 from oauth2client import client
 from oauth2client import file
 from oauth2client import tools
-import math
-import numpy
+
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -117,7 +117,8 @@ def main():
     """Iterates through each document and adds to the running sum"""
     word_total = 0
     doc_total = 0
-    lengthiest_doc = ("", 0)
+    lengthiest_doc = (0, "")
+    least_lengthy_doc = (float('inf'), "")
     num_words_list = []
     for item in items:
         document_id = item['id']
@@ -128,8 +129,10 @@ def main():
         words = read_structural_elements(doc_content)
         num_words = len(words.split())
         num_words_list.append(num_words)
-        if (num_words > lengthiest_doc[1]):
-            lengthiest_doc = (doc_title, num_words)
+        if (num_words > lengthiest_doc[0]):
+            lengthiest_doc = (num_words, doc_title)
+        if (num_words < least_lengthy_doc[0]):
+            least_lengthy_doc = (num_words, doc_title)
         word_total += num_words
         doc_total += 1
 
@@ -140,15 +143,13 @@ def main():
     std = round(numpy.std(num_words_list), 1)
 
     print(f"\nGlobal word total: {word_total}")
-    print(f"Global document total: {doc_total}\n")
-
-    print("Five number summary:\n")
+    print(f"Global document total: {doc_total}")
     
-    print(f"Minimum: {minimum}")
-    print(f"Maximum: {maximum}")
+    print(f"Minimum: {least_lengthy_doc}")
+    print(f"Maximum: {lengthiest_doc}")
     print(f"Mean: {mean}")
     print(f"Median: {median}")
-    print(f"Standard deviation: {std}\n")
+    print(f"Standard deviation: {std}")
     end = time.time()
     elapsed_time = (int) (end - start)
     print('Execution time:', elapsed_time, 'seconds')
